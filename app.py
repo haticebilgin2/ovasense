@@ -1,14 +1,20 @@
 import openai
 from flask import Flask, request, jsonify, render_template
-
-
 import os
 from dotenv import load_dotenv
+import logging
+
+# Initialize Flask app
 app = Flask(__name__)
 
+# Enable detailed logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Load environment variables from .env file
 load_dotenv()
+
+# Fetch OpenAI API key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
-print(openai.api_key)
 
 @app.route("/")
 def home():
@@ -16,12 +22,19 @@ def home():
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_message = request.json.get('message')
-
-    if not user_message:
-        return jsonify({'error': 'No message provided'}), 400
-
     try:
+        # Check if the request has JSON data
+        if request.is_json:
+            user_message = request.json.get('message')
+            app.logger.debug(f"Received message: {user_message}")
+        else:
+            app.logger.error("Request is not JSON")
+            return jsonify({"error": "Request must be JSON"}), 400
+
+        if not user_message:
+            app.logger.error("No message provided")
+            return jsonify({"error": "No message provided"}), 400
+
         # Using 'gpt-3.5-turbo' for conversation-based API
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",  # Or use "gpt-4" if available
@@ -39,11 +52,12 @@ def ask():
             ]
         )
 
-        # Extracting the response from the OpenAI API response
         bot_message = response['choices'][0]['message']['content']
+        app.logger.debug(f"Bot response: {bot_message}")
         return jsonify({'response': bot_message})
 
     except Exception as e:
+        app.logger.error(f"Error during OpenAI API call: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":

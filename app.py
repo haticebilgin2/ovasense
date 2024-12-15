@@ -35,10 +35,10 @@ def ask():
             app.logger.error("No message provided")
             return jsonify({"error": "No message provided"}), 400
 
-        # Using 'gpt-3.5-turbo' for conversation-based API
+        # Use the correct API interface for chat-based requests (ChatCompletion)
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",  # Or use "gpt-4" if available
-            messages=[
+            messages=[ 
                 {"role": "system", "content": """Hi there! Welcome to OvaSense 🌸, your trusted companion for managing PCOS and Endometriosis with care and confidence. Whether you’re here for answers, advice, or tools to track your progress, I’m here to support you every step of the way.
 
                 Here’s what I can help you with today:
@@ -52,7 +52,8 @@ def ask():
             ]
         )
 
-        bot_message = response['choices'][0]['message']['content']
+        # Extracting the response from the OpenAI API
+        bot_message = response['choices'][0]['message']['content']  # Get the message content
         app.logger.debug(f"Bot response: {bot_message}")
         return jsonify({'response': bot_message})
 
